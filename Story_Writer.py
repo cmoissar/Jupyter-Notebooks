@@ -628,11 +628,11 @@ if str_coord=='X':
     coord_magnetopause_down = 0
 
 elif (str_coord == 'Y'):
-    jyz_max_local_max_up = second_largest(intersection(jyz_slice[maximums], jyz_slice[test_up]))
+    jyz_max_local_max_up = MD.second_largest(intersection(jyz_slice[maximums], jyz_slice[test_up]))
     i_m_up = aplatir(np.where(jyz_slice == jyz_max_local_max_up))
     coord_magnetopause_up = coord[i_m_up]
 
-    jyz_max_local_max_down = second_largest(intersection(jyz_slice[maximums], jyz_slice[test_down]))
+    jyz_max_local_max_down = MD.second_largest(intersection(jyz_slice[maximums], jyz_slice[test_down]))
     i_m_down = aplatir(np.where(jyz_slice == jyz_max_local_max_down))
     coord_magnetopause_down = coord[i_m_down]
     
