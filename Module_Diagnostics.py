@@ -298,7 +298,26 @@ def smooth(y, box_pts):
     return y_smooth
 
 
-# In[ ]:
+# In[28]:
+
+
+def second_largest(list1):
+    mx=max(list1[0],list1[1])  
+    secondmax=min(list1[0],list1[1])  
+    n =len(list1) 
+    for i in range(2,n):  
+        if list1[i]>mx:  
+            secondmax=mx 
+            mx=list1[i]  
+        elif list1[i]>secondmax and mx != list1[i]:  
+            secondmax=list1[i] 
+        else: 
+            if secondmax == mx: 
+                secondmax = list1[i] 
+    return secondmax
+
+
+# In[9]:
 
 
 class color:
@@ -318,7 +337,7 @@ class color:
 
 # ### find_bow_shock_and_magnetopause(...) and compute_global_geometry(...)
 
-# In[8]:
+# In[10]:
 
 
 from IPython.core.debugger import set_trace
@@ -607,7 +626,7 @@ def find_bow_shock_and_magnetopause(str_coord, B, N, V, loc=None):
 # plt.show()
 
 
-# In[9]:
+# In[11]:
 
 
 def compute_global_geometry(B, N, V, metadata, time):
@@ -630,7 +649,7 @@ def compute_global_geometry(B, N, V, metadata, time):
 
 # ### find_ip_shock(V, ...) and find_mc_leading_edge(B, N, ...)
 
-# In[10]:
+# In[12]:
 
 
 def find_ip_shock(V, metadata, time):
@@ -717,7 +736,7 @@ def find_mc_leading_edge(B, N, metadata, time):
 
 # ### construct_box(...) and plot_boxes(...)
 
-# In[11]:
+# In[13]:
 
 
 def construct_box(str_coord, coord_bow_shock, coord_magnetopause):    
@@ -794,7 +813,7 @@ def construct_box_indexes(str_coord, coord_bow_shock, coord_magnetopause):
     return (ix_max,ix_min,iy_max,iy_min,iz_max,iz_min)    
 
 
-# In[12]:
+# In[14]:
 
 
 def make_boxes_JSON_serializable(boxes):
@@ -847,7 +866,7 @@ def create_boxes_dictionary():
     return boxes
 
 
-# In[13]:
+# In[15]:
 
 
 import matplotlib.pyplot as plt
@@ -919,7 +938,7 @@ def plot_boxes():
 
 # ### calculate_bow_shock_parameters(...)
 
-# In[14]:
+# In[16]:
 
 
 def bow_shock_normale(loc, B, N, V, along='X', d=12):
@@ -958,7 +977,7 @@ def bow_shock_normale(loc, B, N, V, along='X', d=12):
         return origin, vector
 
 
-# In[15]:
+# In[17]:
 
 
 def calculate_bow_shock_parameters(loc, B, N, V, T):    
@@ -1016,7 +1035,7 @@ def calculate_bow_shock_parameters(loc, B, N, V, T):
 
 # #### Compute data and rms
 
-# In[16]:
+# In[18]:
 
 
 def compute_data_in_cubes(data1, data2=None, function1=identity, function_both=None):
@@ -1109,7 +1128,7 @@ def compute_RMS_in_cubes(data):
 
 # #### Test compute_RMS (...)
 
-# In[17]:
+# In[19]:
 
 
 import numpy as np
@@ -1139,7 +1158,7 @@ print(f"This should be close to 0: {compute_RMS(10,0,10,0,10,0, 1)}")
 
 # #### IndexTracker (doesn't seem to work when defined here. Works well directly in the working.ipynb)
 
-# In[18]:
+# In[20]:
 
 
 class IndexTracker(object):
@@ -1222,7 +1241,7 @@ x = {self.ind}''')
 
 # ### Plot colormaps
 
-# In[19]:
+# In[21]:
 
 
 # Define a colormap plot function
@@ -1347,7 +1366,7 @@ def plot_colormap(A, title, label, plane,
 
 # ### Temporal_B
 
-# In[20]:
+# In[22]:
 
 
 def distance( pos1, pos2 ):
@@ -1389,7 +1408,7 @@ def find_closest_virtual_satellite(satellites, box_id, boxes=None):
     return closest_sat
 
 
-# In[21]:
+# In[23]:
 
 
 def update_satellites_with_satellite_info(satellites, file_satellite):
@@ -1429,7 +1448,7 @@ def update_satellites_with_satellite_info(satellites, file_satellite):
     return satellites         
 
 
-# In[22]:
+# In[24]:
 
 
 def plot_virtual_sats_positions(satellites, color='red', pre_figure=None):
@@ -1457,7 +1476,7 @@ def plot_virtual_sats_positions(satellites, color='red', pre_figure=None):
     return fig, ax
 
 
-# In[23]:
+# In[25]:
 
 
 def plot_temporal_B(satellite, title=None):
