@@ -314,7 +314,7 @@ def second_largest(list1, sub_list1, str_coord='Y'):
     two_largest.extend([tmp.pop(tmp.index(max(tmp)))])
     two_largest.extend([tmp.pop(tmp.index(max(tmp)))])
     #at this point, we have the two largest local maximas
-    if str_coord='Y': 
+    if str_coord=='Y': 
         #for completeness, other coords may be added,
         #I don't need them for now
         coord = Y
