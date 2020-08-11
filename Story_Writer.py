@@ -589,8 +589,8 @@ n_slice = savgol_filter(n_slice, 51, 3)
 test_planet = (15 < abs(coord)) & (abs(coord) < 80)
 test_coord_up  = (coord > 0)
 test_coord_down  = (coord < 0)
-test_grad_n_up   = (np.gradient(n_slice) > 0.2*max(np.gradient(n_slice)[test_planet])) & test_coord_up
-test_grad_n_down = (np.gradient(n_slice) < 0.2*min(np.gradient(n_slice)[test_planet])) & test_coord_down
+test_grad_n_up   = (np.gradient(n_slice) > 0.1*max(np.gradient(n_slice)[test_planet])) & test_coord_up
+test_grad_n_down = (np.gradient(n_slice) < 0.1*min(np.gradient(n_slice)[test_planet])) & test_coord_down
 
 test_up   = test_grad_n_up & test_coord_up & test_planet
 test_down = test_grad_n_down & test_coord_down & test_planet
