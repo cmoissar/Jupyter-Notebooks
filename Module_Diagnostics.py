@@ -268,6 +268,8 @@ def aplatir(conteneurs):
     '''
     returns a float from a 0D array, or a list from a np.array. Useful sometimes.
     '''
+    if len(conteneurs) == 1:
+        return conteneurs[0]
     result = [item for conteneur in conteneurs for item in conteneur]
     if len(result) == 1:
         return result[0]
@@ -301,21 +303,31 @@ def smooth(y, box_pts):
 # In[28]:
 
 
-def second_largest(list1):
-    mx=max(list1[0],list1[1])  
-    secondmax=min(list1[0],list1[1])  
-    n =len(list1) 
-    for i in range(2,n):  
-        if list1[i]>mx:  
-            secondmax=mx 
-            mx=list1[i]  
-        elif list1[i]>secondmax and mx != list1[i]:  
-            secondmax=list1[i] 
-        else: 
-            if secondmax == mx: 
-                secondmax = list1[i] 
-    return secondmax
+def second_largest(list1, sub_list1, str_coord='Y'):
+    '''
+    This function extracts the two largest local maxima 
+    from sub_list1.
+    It the finds which is furthest away from the planet.
+    '''
+    tmp = sub_list1.copy()
+    two_largest = []
+    two_largest.extend([tmp.pop(tmp.index(max(tmp)))])
+    two_largest.extend([tmp.pop(tmp.index(max(tmp)))])
+    #at this point, we have the two largest local maximas
+    if str_coord='Y': 
+        #for completeness, other coords may be added,
+        #I don't need them for now
+        coord = Y
+    c1 = aplatir(coord[np.where(list1 == two_largest[0])])
+    c2 = aplatir(coord[np.where(jyz_slice == two_largest[1])])
+    candidates = [c1, c2]
+    abs_candidates = [abs(ci) for ci in candidates]
+    index_farthest = abs_candidates.index(max(abs_candidates))
+    #Which of the two candidate is furthest from the planet
+    return list1[index_farthest]
 
+    #now we have their positions
+    
 
 # In[9]:
 
@@ -572,17 +584,19 @@ def find_bow_shock_and_magnetopause(str_coord, B, N, V, loc=None):
         #set_trace()
 
         if str_coord=='X':
+            #This next line may be convoluted for nothing
+            #Try: jyz_max_local_map_up = max(jyz_slice[test_up])
             jyz_max_local_max_up = max(intersection(jyz_slice[maximums], jyz_slice[test_up]))
             i_m_up = aplatir(np.where(jyz_slice == jyz_max_local_max_up))
             coord_magnetopause_up = coord[i_m_up]
 
             coord_magnetopause_down = 0
         elif (str_coord == 'Y'):
-            jyz_max_local_max_up = second_largest(intersection(jyz_slice[maximums], jyz_slice[test_up]))
+            jyz_max_local_max_up = second_largest(jyz_slice, intersection(jyz_slice[maximums], jyz_slice[test_up]))
             i_m_up = aplatir(np.where(jyz_slice == jyz_max_local_max_up))
             coord_magnetopause_up = coord[i_m_up]
 
-            jyz_max_local_max_down = second_largest(intersection(jyz_slice[maximums], jyz_slice[test_down]))
+            jyz_max_local_max_down = second_largest(jyz_slice, intersection(jyz_slice[maximums], jyz_slice[test_down]))
             i_m_down = aplatir(np.where(jyz_slice == jyz_max_local_max_down))
             coord_magnetopause_down = coord[i_m_down]
         elif (str_coord == 'Z'):

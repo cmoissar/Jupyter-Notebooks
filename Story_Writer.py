@@ -400,12 +400,9 @@ test_down =  (  test_j_large
               & test_close_to_planet
               & test_coord_down      )
 
-def aplatir(conteneurs):
-    return [item for conteneur in conteneurs for item in conteneur]
-
 def def_coord_bow_shock(test, loc='down'):
 
-    where_test = aplatir(np.where(test))
+    where_test = MD.aplatir(np.where(test))
 
     if loc=='up':
         where_test.reverse()
@@ -622,27 +619,27 @@ maximums = signal.argrelextrema(jyz_slice, np.greater, order=4)
 
 if str_coord=='X':
     jyz_max_local_max_up = max(intersection(jyz_slice[maximums], jyz_slice[test_up]))
-    i_m_up = aplatir(np.where(jyz_slice == jyz_max_local_max_up))
+    i_m_up = MD.aplatir(np.where(jyz_slice == jyz_max_local_max_up))
     coord_magnetopause_up = coord[i_m_up]
 
     coord_magnetopause_down = 0
 
 elif (str_coord == 'Y'):
-    jyz_max_local_max_up = MD.second_largest(intersection(jyz_slice[maximums], jyz_slice[test_up]))
-    i_m_up = aplatir(np.where(jyz_slice == jyz_max_local_max_up))
+    jyz_max_local_max_up = MD.second_largest(jyz_slice, intersection(jyz_slice[maximums], jyz_slice[test_up]))
+    i_m_up = MD.aplatir(np.where(jyz_slice == jyz_max_local_max_up))
     coord_magnetopause_up = coord[i_m_up]
 
-    jyz_max_local_max_down = MD.second_largest(intersection(jyz_slice[maximums], jyz_slice[test_down]))
-    i_m_down = aplatir(np.where(jyz_slice == jyz_max_local_max_down))
+    jyz_max_local_max_down = MD.second_largest(jyz_slice, intersection(jyz_slice[maximums], jyz_slice[test_down]))
+    i_m_down = MD.aplatir(np.where(jyz_slice == jyz_max_local_max_down))
     coord_magnetopause_down = coord[i_m_down]
     
 elif (str_coord == 'Z'):
     jyz_max_local_max_up = max(intersection(jyz_slice[maximums], jyz_slice[test_up]))
-    i_m_up = aplatir(np.where(jyz_slice == jyz_max_local_max_up))
+    i_m_up = MD.aplatir(np.where(jyz_slice == jyz_max_local_max_up))
     coord_magnetopause_up = coord[i_m_up]
 
     jyz_max_local_max_down = max(intersection(jyz_slice[maximums], jyz_slice[test_down]))
-    i_m_down = aplatir(np.where(jyz_slice == jyz_max_local_max_down))
+    i_m_down = MD.aplatir(np.where(jyz_slice == jyz_max_local_max_down))
     coord_magnetopause_down = coord[i_m_down]
 
 print(coord_magnetopause_up)
