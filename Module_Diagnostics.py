@@ -268,8 +268,6 @@ def aplatir(conteneurs):
     '''
     returns a float from a 0D array, or a list from a np.array. Useful sometimes.
     '''
-    if len(conteneurs) == 1:
-        return conteneurs[0]
     result = [item for conteneur in conteneurs for item in conteneur]
     if len(result) == 1:
         return result[0]
@@ -318,11 +316,12 @@ def second_largest(list1, sub_list1, str_coord='Y'):
         #for completeness, other coords may be added,
         #I don't need them for now
         coord = Y
-    c1 = aplatir(coord[np.where(list1 == two_largest[0])])
-    c2 = aplatir(coord[np.where(jyz_slice == two_largest[1])])
+    c1 = coord[np.where(list1 == two_largest[0])][0]
+    c2 = coord[np.where(list1 == two_largest[1])][0]
     candidates = [c1, c2]
     abs_candidates = [abs(ci) for ci in candidates]
     index_farthest = abs_candidates.index(max(abs_candidates))
+    index_farthest = aplatir(np.where(coord == candidates[index_farthest]))
     #Which of the two candidate is furthest from the planet
     return list1[index_farthest]
 
