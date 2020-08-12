@@ -298,7 +298,7 @@ def smooth(y, box_pts):
     return y_smooth
 
 
-# In[28]:
+# In[8]:
 
 
 def second_largest(list1, sub_list1, str_coord='Y'):
@@ -325,8 +325,8 @@ def second_largest(list1, sub_list1, str_coord='Y'):
     #Which of the two candidate is furthest from the planet
     return list1[index_farthest]
 
-    #now we have their positions
-    
+    #now we have their positions    
+
 
 # In[9]:
 
@@ -594,7 +594,6 @@ def find_bow_shock_and_magnetopause(str_coord, B, N, V, loc=None):
             jyz_max_local_max_up = second_largest(jyz_slice, intersection(jyz_slice[maximums], jyz_slice[test_up]))
             i_m_up = aplatir(np.where(jyz_slice == jyz_max_local_max_up))
             coord_magnetopause_up = coord[i_m_up]
-
             jyz_max_local_max_down = second_largest(jyz_slice, intersection(jyz_slice[maximums], jyz_slice[test_down]))
             i_m_down = aplatir(np.where(jyz_slice == jyz_max_local_max_down))
             coord_magnetopause_down = coord[i_m_down]
@@ -1424,12 +1423,11 @@ def find_closest_virtual_satellite(satellites, box_id, boxes=None):
 # In[23]:
 
 
-def update_satellites_with_satellite_info(satellites, file_satellite):
+def update_satellites_with_satellite_info(satellites, file_satellite, B0, V0, N0):
     
     with open(file_satellite , "r", encoding='utf-8') as f:
 
         content = f.read()
-
         infos = content.split()
 
         x_sat = int(float(infos[1]))
@@ -1446,16 +1444,30 @@ def update_satellites_with_satellite_info(satellites, file_satellite):
             liste = info.split()        
 
             time = int(float(liste[0]))
+            if f't{time}' in satellites[sat_id]:
+                continue
 
             index_b = liste.index('B_field%xyz')
+            index_v = liste.index('velocity%xyz')
+            index_n = liste.index('density')
 
-            B_field_x = liste[index_b + 1]
-            B_field_y = liste[index_b + 2]
-            B_field_z = liste[index_b + 3]
+            B_field_x = -float(liste[index_b + 1]) * B0
+            B_field_y = -float(liste[index_b + 2]) * B0
+            B_field_z =  float(liste[index_b + 3]) * B0
+                        
+            N_field = float(liste[index_n + 1]) * N0
+            
+            V_field_x = -float(liste[index_v + 1]) * V0 / (N_field / N0)
+            V_field_y = -float(liste[index_v + 2]) * V0 / (N_field / N0)
+            V_field_z =  float(liste[index_v + 3]) * V0 / (N_field / N0)
 
             satellites[sat_id].update({f't{time}': { 'Bx': B_field_x,
                                                      'By': B_field_y,
-                                                     'Bz': B_field_z  }
+                                                     'Bz': B_field_z,
+                                                     'Vx': V_field_x,
+                                                     'Vy': V_field_y,
+                                                     'Vz': V_field_z,
+                                                     'N' : N_field    }
                                        })
             
     return satellites         
@@ -1500,11 +1512,15 @@ def plot_temporal_B(satellite, title=None):
                                                     ... }
     An easy way to get one is: satellites[sat_id], or satellites_boxes[box]
     '''
-    
+        
     time_vec = []
     Bx = []
     By = []
     Bz = []
+    Vx = []
+    Vy = []
+    Vz = []
+    N  = []
        
     for t in satellite:
         if t=='position':
@@ -1513,21 +1529,51 @@ def plot_temporal_B(satellite, title=None):
         Bx = Bx + [float(satellite[t]['Bx'])]
         By = By + [float(satellite[t]['By'])]
         Bz = Bz + [float(satellite[t]['Bz'])]
+        Vx = Vx + [float(satellite[t]['Vx'])]
+        Vy = Vy + [float(satellite[t]['Vy'])]
+        Vz = Vz + [float(satellite[t]['Vz'])]
+        N  = N  + [float(satellite[t]['N' ])]
         
-    plt.figure()    
-    if title:
-        plt.title(title)
         
-    plt.plot(time_vec, Bx, label='Bx')
-    plt.plot(time_vec, By, label='By')
-    plt.plot(time_vec, Bz, label='Bz')
-    plt.ylabel('Magnetic field (nT)')
-    plt.xlabel(r'time ($\Omega_{ci}^{-1}$)')
+    from matplotlib.gridspec    import GridSpec
+    plt.close('all')
+    plt.figure(figsize=(15, 10))
+    gs = GridSpec(3, 1)
     
+    if title:
+        plt.suptitle(title)
+        
+    axe = plt.subplot(gs[0])
+    axe.plot(time_vec, Bx, label='Bx')
+    axe.plot(time_vec, By, label='By')
+    axe.plot(time_vec, Bz, label='Bz')
     plt.legend()
+    axe.set_ylabel('Magnetic field (nT)')
+    axe = plt.subplot(gs[1], sharex=axe)
+    axe.plot(time_vec, Vx, label='Vx')
+    axe.plot(time_vec, Vy, label='Vy')
+    axe.plot(time_vec, Vz, label='Vz')
+    plt.legend()
+    axe.set_ylabel('Velocity (km/s))')
+    axe = plt.subplot(gs[2], sharex=axe)
+    axe.plot(time_vec, N , label='N' )
+    plt.legend()
+    axe.set_ylabel('Density (cc)')
+    axe.set_xlabel(r'time ($\Omega_{ci}^{-1}$)')
+    
     plt.show()
+    
+    Bx = np.array(Bx)
+    By = np.array(By)
+    Bz = np.array(Bz)
+    
+    Vx = np.array(Vx)
+    Vy = np.array(Vy)
+    Vz = np.array(Vz)
+    
+    N = np.array(N)
             
-    return time_vec, (Bx, By, Bz)
+    return time_vec, (Bx, By, Bz), (Vx, Vy, Vz), N 
 
 
 # In[ ]:

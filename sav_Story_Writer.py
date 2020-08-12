@@ -21,15 +21,15 @@ import numpy as np
 import glob
 import re
 import os
+from scipy.signal import savgol_filter
+
 
 import pylab as pl
 import matplotlib
 from matplotlib.colors import BoundaryNorm
 from matplotlib.ticker import MaxNLocator
 from matplotlib import rcParams
-from scipy.signal import savgol_filter
 
-import import_ipynb
 
 import Module_Diagnostics as MD
 import numpy as np
@@ -66,7 +66,6 @@ rcParams["figure.figsize"] = [9.4, 4.8]
 # ## Choose run and time for analysis
 
 # In[3]:
-
 
 run_name = 'RUN_NAME'
 
@@ -316,7 +315,7 @@ x = {self.ind}''')
 # When the bow_shock is misplaced, these next few cells should help understand why
 dl = 5
 
-str_coord='Y'
+str_coord='X'
 
 
 if (str_coord=='X'):
@@ -469,9 +468,9 @@ axe.set_xlabel(str_coord, weight='bold', fontsize=16)
 axe.legend()
 
 
-if not(loop):
+#if not(loop):
 
-    plt.show()
+#    plt.show()
 
 
 # In[13]:
@@ -577,7 +576,6 @@ if (str_coord=='Z'):
     jx_slice = abs(MD.Jx(B, slices)).mean(axis=(0, 1))
     jy_slice = abs(MD.Jy(B, slices)).mean(axis=(0, 1))
     jz_slice = abs(MD.Jz(B, slices)).mean(axis=(0, 1))    
-
     v_slice = np.sqrt( Vx[slices]**2
                       +Vy[slices]**2
                       +Vz[slices]**2 ).mean(axis=(0, 1))
@@ -585,7 +583,6 @@ if (str_coord=='Z'):
 
 
 # In[16]:
-
 
 n_slice = savgol_filter(n_slice, 51, 3)
 
@@ -683,7 +680,7 @@ axe.axvline(coord_magnetopause_up   , color='red', linewidth=3, alpha=0.5, label
 axe.axvline(coord_magnetopause_down , color='red', linewidth=3, alpha=0.5, label="magnetopause down position")
 axe.plot(coord, j_slice, label='j slice')
 axe.scatter(coord[maximums], j_slice[maximums], label='local maximas')
-ymax = 90 #0.1*np.nanmax(j_slice)
+ymax = 90
 axe.set_ylim([-1, ymax])
 # axe.plot(coord, 1000*np.gradient(n_slice), label = '1000*grad n slice')
 # axe.plot(coord, 0.5*ymax*test_grad_n_up, label='strong up gradient')
@@ -1158,11 +1155,8 @@ JE_upstream, JE_nose, JE_yup, JE_ydown, JE_zup, JE_zdown = MD.compute_data_in_cu
                                                                                     function_both=MD.dot_product)
 print(JE_upstream, JE_nose,JE_yup,JE_ydown,JE_zup,JE_zdown)
 
-JxB_upstream, JxB_nose, JxB_yup, JxB_ydown, JxB_zup, JxB_zdown = MD.compute_data_in_cubes(data1=B, data2=B,
-                                                                                          function1=MD.J,
-                                                                                          function_both=MD.cross_product)
+JxB_upstream, JxB_nose, JxB_yup, JxB_ydown, JxB_zup, JxB_zdown = MD.compute_data_in_cubes(data1=B, data2=B, function1=MD.J, function_both=MD.cross_product)
 print(JxB_upstream, JxB_nose, JxB_yup, JxB_ydown, JxB_zup, JxB_zdown)
-
 
 # In[43]:
 
@@ -1589,7 +1583,5 @@ print(x[MD.convert_coord_to_indices(loc)[0]],
 # In[ ]:
 
 
-R_Earth = 6400 #km
 
-print(x_bow_shock * cwp)
 
