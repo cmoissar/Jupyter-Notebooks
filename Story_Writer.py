@@ -987,7 +987,7 @@ mag_B = np.sqrt( Bx[:,:,nz0]**2
                 +Bz[:,:,nz0]**2 )
 
 magplot = MD.plot_colormap(mag_B, title = f'B dans (x,y) at {time}', label = 'B (nT)', plane = 'xy',
-                 ratio_max_to_med = 1.4, with_dots = False, normales = None, loop = loop,
+                 ratio_max_to_med = 1.4, with_dots = True, normales = None, loop = loop,
                  save_dir = storing_directory, t_label = time_label,
                  zoom = zoom, density = 1.5, 
                  streamplot = True, Bx = Bx[:,:,nz0], Bj = By[:,:,nz0])
@@ -997,7 +997,7 @@ magplot = MD.plot_colormap(mag_B, title = f'B dans (x,y) at {time}', label = 'B 
 
 
 MD.plot_colormap(N[:,:,nz0], f'N dans (x,y) at {time}', r'N (cm$^{-3}$)', 'xy',
-                 with_dots = False, normales = None, loop = loop,
+                 with_dots = True, normales = None, loop = loop,
                  save_dir = storing_directory, t_label = time_label,
                  zoom = zoom)
 
@@ -1010,7 +1010,7 @@ mag_B = np.sqrt( Bx[:,ny0,:]**2
                 +Bz[:,ny0,:]**2 )
 
 MD.plot_colormap(mag_B, f'B dans (x,z) at {time}', 'B (nT)', 'xz',
-                 ratio_max_to_med = 1.4, with_dots = False, normales = None, loop = loop,
+                 ratio_max_to_med = 1.4, with_dots = True, normales = None, loop = loop,
                  save_dir = storing_directory, t_label = time_label,
                  zoom = zoom, density = 1.5,
                  streamplot = True, Bx = Bx[:,ny0,:], Bj = Bz[:,ny0,:])
@@ -1020,7 +1020,7 @@ MD.plot_colormap(mag_B, f'B dans (x,z) at {time}', 'B (nT)', 'xz',
 
 
 MD.plot_colormap(N[:,ny0,:], f'N dans (x,z) at {time}', r'N (cm$^{-3}$)', 'xz',
-                 with_dots = False, normales = None, loop = loop,
+                 with_dots = True, normales = None, loop = loop,
                  save_dir = storing_directory, t_label = time_label,
                  zoom = zoom)
 
