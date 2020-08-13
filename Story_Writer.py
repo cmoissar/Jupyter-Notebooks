@@ -29,7 +29,6 @@ from matplotlib.ticker import MaxNLocator
 from matplotlib import rcParams
 from scipy.signal import savgol_filter
 
-import import_ipynb
 
 import Module_Diagnostics as MD
 import numpy as np
@@ -819,14 +818,13 @@ test_le = test_grad_n & test_grad_b & test_non_absurd #& test_grad_v
 
 # In[25]:
 
-
-ix_mc_leading_edge = np.where(j_slice == np.nanmax(j_slice[np.where(test_le)]))
-
-x_mc_leading_edge = x[ix_mc_leading_edge]
-
+try:
+    ix_mc_leading_edge = np.where(j_slice == np.nanmax(j_slice[np.where(test_le)]))
+    x_mc_leading_edge = x[ix_mc_leading_edge]
+except ValueError:
+    x_mc_leading_edge = np.nan
 
 # In[26]:
-
 
 plt.close('all')
 plt.figure(figsize=(8, 10))
@@ -989,7 +987,7 @@ mag_B = np.sqrt( Bx[:,:,nz0]**2
                 +Bz[:,:,nz0]**2 )
 
 magplot = MD.plot_colormap(mag_B, title = f'B dans (x,y) at {time}', label = 'B (nT)', plane = 'xy',
-                 ratio_max_to_med = 1.4, with_dots = True, normales = None, loop = loop,
+                 ratio_max_to_med = 1.4, with_dots = False, normales = None, loop = loop,
                  save_dir = storing_directory, t_label = time_label,
                  zoom = zoom, density = 1.5, 
                  streamplot = True, Bx = Bx[:,:,nz0], Bj = By[:,:,nz0])
@@ -999,7 +997,7 @@ magplot = MD.plot_colormap(mag_B, title = f'B dans (x,y) at {time}', label = 'B 
 
 
 MD.plot_colormap(N[:,:,nz0], f'N dans (x,y) at {time}', r'N (cm$^{-3}$)', 'xy',
-                 with_dots = True, normales = None, loop = loop,
+                 with_dots = False, normales = None, loop = loop,
                  save_dir = storing_directory, t_label = time_label,
                  zoom = zoom)
 
@@ -1012,7 +1010,7 @@ mag_B = np.sqrt( Bx[:,ny0,:]**2
                 +Bz[:,ny0,:]**2 )
 
 MD.plot_colormap(mag_B, f'B dans (x,z) at {time}', 'B (nT)', 'xz',
-                 ratio_max_to_med = 1.4, with_dots = True, normales = None, loop = loop,
+                 ratio_max_to_med = 1.4, with_dots = False, normales = None, loop = loop,
                  save_dir = storing_directory, t_label = time_label,
                  zoom = zoom, density = 1.5,
                  streamplot = True, Bx = Bx[:,ny0,:], Bj = Bz[:,ny0,:])
@@ -1022,7 +1020,7 @@ MD.plot_colormap(mag_B, f'B dans (x,z) at {time}', 'B (nT)', 'xz',
 
 
 MD.plot_colormap(N[:,ny0,:], f'N dans (x,z) at {time}', r'N (cm$^{-3}$)', 'xz',
-                 with_dots = True, normales = None, loop = loop,
+                 with_dots = False, normales = None, loop = loop,
                  save_dir = storing_directory, t_label = time_label,
                  zoom = zoom)
 

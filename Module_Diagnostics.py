@@ -310,15 +310,19 @@ def second_largest(list1, sub_list1, str_coord='Y'):
     tmp = sub_list1.copy()
     two_largest = []
     two_largest.extend([tmp.pop(tmp.index(max(tmp)))])
-    two_largest.extend([tmp.pop(tmp.index(max(tmp)))])
+    if tmp:
+        two_largest.extend([tmp.pop(tmp.index(max(tmp)))])
     #at this point, we have the two largest local maximas
     if str_coord=='Y': 
         #for completeness, other coords may be added,
         #I don't need them for now
         coord = Y
     c1 = coord[np.where(list1 == two_largest[0])][0]
-    c2 = coord[np.where(list1 == two_largest[1])][0]
-    candidates = [c1, c2]
+    if tmp:
+        c2 = coord[np.where(list1 == two_largest[1])][0]
+        candidates = [c1, c2]
+    else:
+        candidates = [c1, 0]
     abs_candidates = [abs(ci) for ci in candidates]
     index_farthest = abs_candidates.index(max(abs_candidates))
     index_farthest = aplatir(np.where(coord == candidates[index_farthest]))
