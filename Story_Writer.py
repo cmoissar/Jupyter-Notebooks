@@ -591,11 +591,11 @@ n_slice = savgol_filter(n_slice, 51, 3)
 test_planet = (15 < abs(coord)) & (abs(coord) < 80)
 test_coord_up  = (coord > 0)
 test_coord_down  = (coord < 0)
-test_grad_n_up   = (np.gradient(n_slice) > 0.1*max(np.gradient(n_slice)[test_planet])) & test_coord_up
-test_grad_n_down = (np.gradient(n_slice) < 0.1*min(np.gradient(n_slice)[test_planet])) & test_coord_down
+#test_grad_n_up   = (np.gradient(n_slice) > 0.1*max(np.gradient(n_slice)[test_planet])) & test_coord_up
+#test_grad_n_down = (np.gradient(n_slice) < 0.1*min(np.gradient(n_slice)[test_planet])) & test_coord_down
 
-test_up   = test_grad_n_up & test_coord_up & test_planet
-test_down = test_grad_n_down & test_coord_down & test_planet
+test_up   = test_coord_up & test_planet # & test_grad_n_up
+test_down = test_coord_down & test_planet # & test_grad_n_down
 
 # def give_center_of_multiple_ones(test): 
 #     count  = 0 
@@ -670,8 +670,8 @@ axe.axvline(coord_magnetopause_up   , color='red', linewidth=3, alpha=0.5, label
 axe.axvline(coord_magnetopause_down , color='red', linewidth=3, alpha=0.5, label="magnetopause down position")
 axe.plot(coord, n_slice, label='n slice')
 axe.plot(coord, np.gradient(n_slice), label = 'grad n slice')
-axe.plot(coord, 0.1*axe.get_ylim()[1]*test_grad_n_up, label='strong up gradient')
-axe.plot(coord, 0.1*axe.get_ylim()[1]*test_grad_n_down, label='strong down gradient')
+axe.plot(coord, test_up, label='test up')
+axe.plot(coord, test_down, label='test down')
 axe.set_xlim([min(coord), abs(min(coord))])
 axe.set_xlim([-100, 100])
 axe.legend()
