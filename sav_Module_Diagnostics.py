@@ -329,33 +329,7 @@ def second_largest(list1, sub_list1, str_coord='Y'):
     #Which of the two candidate is furthest from the planet
     return list1[index_farthest]
 
-    #now we have their positions     
-
-
-# In[ ]:
-
-
-def intersection(lst1, lst2): 
-    lst3 = [value for value in lst1 if value in lst2] 
-    return lst3 
-
-
-# In[ ]:
-
-
-def give_center_of_multiple_ones(test): 
-    count  = 0 
-    counts = [] 
-    for t in test: 
-        if t: 
-            count += 1 
-        else:    
-            count = 0 
-        counts.append(count) 
-        end = counts.index(max(counts)) 
-        start = end - max(counts) + 1
-        center = int(start + (end-start)/2) 
-    return center
+    #now we have their positions    
 
 
 # In[9]:
@@ -378,7 +352,7 @@ class color:
 
 # ### find_bow_shock_and_magnetopause(...) and compute_global_geometry(...)
 
-# In[2]:
+# In[10]:
 
 
 from IPython.core.debugger import set_trace
@@ -504,7 +478,7 @@ def find_bow_shock_and_magnetopause(str_coord, B, N, V, loc=None):
 
     n_slice = savgol_filter(n_slice, 51, 3)
     b_slice = savgol_filter(b_slice, 51, 3)
-   
+    
     #find bow shock using a local max of current J    
     def find_bow_shock():
         
@@ -535,7 +509,7 @@ def find_bow_shock_and_magnetopause(str_coord, B, N, V, loc=None):
         #This is need to discrimitate between
         #the bow shock and the interplanetary shock
         if str_coord=='X':
-            test_b_grad_up = (np.gradient(b_slice) < -0.5 )
+            test_b_grad_up = (np.gradient(b_slice) < -0.5*np.mean(gstep.data) )
             test_up = test_up & test_b_grad_up
 
         test_down =  (  test_j_large
@@ -579,47 +553,62 @@ def find_bow_shock_and_magnetopause(str_coord, B, N, V, loc=None):
         
         '''
         This function looks for strong gradients of density.
-        The magnetopause in the plane (xy) is defined as the middle of these strong gradients.
-        The magnetopause in the plane (xz) is defined as the peak of current density.
+        The magnetopause is defined as the local max of Jz in these density gradients.
         '''
-     
-        test_planet = (20 < abs(coord)) & (abs(coord) < 80)
+
+        test_planet = (15 < abs(coord)) & (abs(coord) < 80)
         test_coord_up  = (coord > 0)
         test_coord_down  = (coord < 0)
-        test_up   = test_coord_up & test_planet
-        test_down = test_coord_down & test_planet
-        test_grad_n_up   = (np.gradient(n_slice) > 0.1*max(np.gradient(n_slice))) & test_coord_up
-        test_grad_n_down = (np.gradient(n_slice) < -0.1*max(np.gradient(n_slice))) & test_coord_down
+        #test_grad_n_up   = (np.gradient(n_slice) > 0.1*max(np.gradient(n_slice)[test_planet])) & test_coord_up
+        #test_grad_n_down = (np.gradient(n_slice) < 0.1*min(np.gradient(n_slice)[test_planet])) & test_coord_down
 
-        maximums = signal.argrelextrema(j_slice, np.greater, order=4)
+        test_up   = test_coord_up & test_planet # & test_grad_n_up
+        test_down = test_coord_down & test_planet # & test_grad_n_down
+
+        # def give_center_of_multiple_ones(test): 
+        #     count  = 0 
+        #     counts = [] 
+        #     for t in test: 
+        #         if t: 
+        #             count += 1 
+        #         else:    
+        #             count = 0 
+        #         counts.append(count) 
+        #         end = counts.index(max(counts)) 
+        #         start = end - max(counts) + 1
+        #         center = int(start + (end-start)/2) 
+        #     return center
+
+        def intersection(lst1, lst2): 
+            lst3 = [value for value in lst1 if value in lst2] 
+            return lst3 
+
+        maximums = signal.argrelextrema(jyz_slice, np.greater, order=4)
+
+        #set_trace()
 
         if str_coord=='X':
             #This next line may be convoluted for nothing
-            #Try: j_max_local_map_up = max(j_slice[test_up])
-            j_max_local_max_up = max(intersection(j_slice[maximums], j_slice[test_up]))
-            i_m_up = aplatir(np.where(j_slice == j_max_local_max_up))
-            coord_magnetopause_up = coord[i_m_up]
-            coord_magnetopause_down = 0
-        # This peak current method is impractical in the (xy) plane, because of many current structures. 
-        # Probably numerical ersatz of the ring current?
-        elif (str_coord == 'Y'):
-            i_m_up = give_center_of_multiple_ones(test_grad_n_up)
-            coord_magnetopause_up = coord[i_m_up]
-            i_m_down = give_center_of_multiple_ones(test_grad_n_down)
-            coord_magnetopause_down = coord[i_m_down]
-        #     j_max_local_max_up = second_largest(j_slice, intersection(j_slice[maximums], j_slice[test_up]))
-        #     i_m_up = aplatir(np.where(j_slice == j_max_local_max_up))
-        #     coord_magnetopause_up = coord[i_m_up]
-        #     j_max_local_max_down = second_largest(j_slice, intersection(j_slice[maximums], j_slice[test_down]))
-        #     i_m_down = aplatir(np.where(j_slice == j_max_local_max_down))
-        #     coord_magnetopause_down = coord[i_m_down]
-        elif (str_coord == 'Z'):
-            j_max_local_max_up = max(intersection(j_slice[maximums], j_slice[test_up]))
-            i_m_up = aplatir(np.where(j_slice == j_max_local_max_up))
+            #Try: jyz_max_local_map_up = max(jyz_slice[test_up])
+            jyz_max_local_max_up = max(intersection(jyz_slice[maximums], jyz_slice[test_up]))
+            i_m_up = aplatir(np.where(jyz_slice == jyz_max_local_max_up))
             coord_magnetopause_up = coord[i_m_up]
 
-            j_max_local_max_down = max(intersection(j_slice[maximums], j_slice[test_down]))
-            i_m_down = aplatir(np.where(j_slice == j_max_local_max_down))
+            coord_magnetopause_down = 0
+        elif (str_coord == 'Y'):
+            jyz_max_local_max_up = second_largest(jyz_slice, intersection(jyz_slice[maximums], jyz_slice[test_up]))
+            i_m_up = aplatir(np.where(jyz_slice == jyz_max_local_max_up))
+            coord_magnetopause_up = coord[i_m_up]
+            jyz_max_local_max_down = second_largest(jyz_slice, intersection(jyz_slice[maximums], jyz_slice[test_down]))
+            i_m_down = aplatir(np.where(jyz_slice == jyz_max_local_max_down))
+            coord_magnetopause_down = coord[i_m_down]
+        elif (str_coord == 'Z'):
+            jyz_max_local_max_up = max(intersection(jyz_slice[maximums], jyz_slice[test_up]))
+            i_m_up = aplatir(np.where(jyz_slice == jyz_max_local_max_up))
+            coord_magnetopause_up = coord[i_m_up]
+           
+            jyz_max_local_max_down = max(intersection(jyz_slice[maximums], jyz_slice[test_down]))
+            i_m_down = aplatir(np.where(jyz_slice == jyz_max_local_max_down))
             coord_magnetopause_down = coord[i_m_down]
 
 

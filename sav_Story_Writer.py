@@ -21,14 +21,13 @@ import numpy as np
 import glob
 import re
 import os
-from scipy.signal import savgol_filter
-
 
 import pylab as pl
 import matplotlib
 from matplotlib.colors import BoundaryNorm
 from matplotlib.ticker import MaxNLocator
 from matplotlib import rcParams
+from scipy.signal import savgol_filter
 
 
 import Module_Diagnostics as MD
@@ -66,6 +65,7 @@ rcParams["figure.figsize"] = [9.4, 4.8]
 # ## Choose run and time for analysis
 
 # In[3]:
+
 
 run_name = 'RUN_NAME'
 
@@ -393,7 +393,8 @@ maximums = signal.argrelextrema(j_slice, np.greater, order=1+int(5/np.mean(gstep
 #This is need to discrimitate between
 #the bow shock and the interplanetary shock
 if str_coord=='X':
-    test_b_grad_up = (np.gradient(b_slice) < -1 )
+    b_slice = savgol_filter(b_slice, 51, 3) 
+    test_b_grad_up = (np.gradient(b_slice) < -0.5 )
     test_up = test_up & test_b_grad_up
 
 test_down =  (  test_j_large
@@ -439,6 +440,8 @@ axe.set_ylim([-1.5,1.5])
 axe.axvline(coord_bow_shock_up   , color='red', label="bow shock up")
 axe.axvline(coord_bow_shock_down , color='red', label="bow shock down")
 axe.set_xlim([min(coord), abs(min(coord))])
+if str_coord == 'X':
+    axe.set_xlim([min(coord), 200])
 axe.get_xaxis().set_visible(False)
 axe.legend()
 
@@ -468,9 +471,9 @@ axe.set_xlabel(str_coord, weight='bold', fontsize=16)
 axe.legend()
 
 
-#if not(loop):
+if not(loop):
 
-#    plt.show()
+    plt.show()
 
 
 # In[13]:
@@ -576,6 +579,7 @@ if (str_coord=='Z'):
     jx_slice = abs(MD.Jx(B, slices)).mean(axis=(0, 1))
     jy_slice = abs(MD.Jy(B, slices)).mean(axis=(0, 1))
     jz_slice = abs(MD.Jz(B, slices)).mean(axis=(0, 1))    
+
     v_slice = np.sqrt( Vx[slices]**2
                       +Vy[slices]**2
                       +Vz[slices]**2 ).mean(axis=(0, 1))
@@ -584,16 +588,17 @@ if (str_coord=='Z'):
 
 # In[16]:
 
+
 n_slice = savgol_filter(n_slice, 51, 3)
 
 test_planet = (15 < abs(coord)) & (abs(coord) < 80)
 test_coord_up  = (coord > 0)
 test_coord_down  = (coord < 0)
-test_grad_n_up   = (np.gradient(n_slice) > 0.1*max(np.gradient(n_slice)[test_planet])) & test_coord_up
-test_grad_n_down = (np.gradient(n_slice) < 0.1*min(np.gradient(n_slice)[test_planet])) & test_coord_down
+#test_grad_n_up   = (np.gradient(n_slice) > 0.1*max(np.gradient(n_slice)[test_planet])) & test_coord_up
+#test_grad_n_down = (np.gradient(n_slice) < 0.1*min(np.gradient(n_slice)[test_planet])) & test_coord_down
 
-test_up   = test_grad_n_up & test_coord_up & test_planet
-test_down = test_grad_n_down & test_coord_down & test_planet
+test_up   = test_coord_up & test_planet # & test_grad_n_up
+test_down = test_coord_down & test_planet # & test_grad_n_down
 
 # def give_center_of_multiple_ones(test): 
 #     count  = 0 
@@ -668,8 +673,8 @@ axe.axvline(coord_magnetopause_up   , color='red', linewidth=3, alpha=0.5, label
 axe.axvline(coord_magnetopause_down , color='red', linewidth=3, alpha=0.5, label="magnetopause down position")
 axe.plot(coord, n_slice, label='n slice')
 axe.plot(coord, np.gradient(n_slice), label = 'grad n slice')
-axe.plot(coord, 0.1*axe.get_ylim()[1]*test_grad_n_up, label='strong up gradient')
-axe.plot(coord, 0.1*axe.get_ylim()[1]*test_grad_n_down, label='strong down gradient')
+axe.plot(coord, test_up, label='test up')
+axe.plot(coord, test_down, label='test down')
 axe.set_xlim([min(coord), abs(min(coord))])
 axe.set_xlim([-100, 100])
 axe.legend()
@@ -680,7 +685,7 @@ axe.axvline(coord_magnetopause_up   , color='red', linewidth=3, alpha=0.5, label
 axe.axvline(coord_magnetopause_down , color='red', linewidth=3, alpha=0.5, label="magnetopause down position")
 axe.plot(coord, j_slice, label='j slice')
 axe.scatter(coord[maximums], j_slice[maximums], label='local maximas')
-ymax = 90
+ymax = 90 #0.1*np.nanmax(j_slice)
 axe.set_ylim([-1, ymax])
 # axe.plot(coord, 1000*np.gradient(n_slice), label = '1000*grad n slice')
 # axe.plot(coord, 0.5*ymax*test_grad_n_up, label='strong up gradient')
@@ -816,14 +821,13 @@ test_le = test_grad_n & test_grad_b & test_non_absurd #& test_grad_v
 
 # In[25]:
 
-
-ix_mc_leading_edge = np.where(j_slice == np.nanmax(j_slice[np.where(test_le)]))
-
-x_mc_leading_edge = x[ix_mc_leading_edge]
-
+try:
+    ix_mc_leading_edge = np.where(j_slice == np.nanmax(j_slice[np.where(test_le)]))
+    x_mc_leading_edge = x[ix_mc_leading_edge]
+except ValueError:
+    x_mc_leading_edge = np.nan
 
 # In[26]:
-
 
 plt.close('all')
 plt.figure(figsize=(8, 10))
@@ -1155,8 +1159,11 @@ JE_upstream, JE_nose, JE_yup, JE_ydown, JE_zup, JE_zdown = MD.compute_data_in_cu
                                                                                     function_both=MD.dot_product)
 print(JE_upstream, JE_nose,JE_yup,JE_ydown,JE_zup,JE_zdown)
 
-JxB_upstream, JxB_nose, JxB_yup, JxB_ydown, JxB_zup, JxB_zdown = MD.compute_data_in_cubes(data1=B, data2=B, function1=MD.J, function_both=MD.cross_product)
+JxB_upstream, JxB_nose, JxB_yup, JxB_ydown, JxB_zup, JxB_zdown = MD.compute_data_in_cubes(data1=B, data2=B,
+                                                                                          function1=MD.J,
+                                                                                          function_both=MD.cross_product)
 print(JxB_upstream, JxB_nose, JxB_yup, JxB_ydown, JxB_zup, JxB_zdown)
+
 
 # In[43]:
 
@@ -1583,5 +1590,7 @@ print(x[MD.convert_coord_to_indices(loc)[0]],
 # In[ ]:
 
 
+R_Earth = 6400 #km
 
+print(x_bow_shock * cwp)
 

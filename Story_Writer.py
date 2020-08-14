@@ -29,6 +29,8 @@ from matplotlib.ticker import MaxNLocator
 from matplotlib import rcParams
 from scipy.signal import savgol_filter
 
+from matplotlib.gridspec    import GridSpec
+import import_ipynb
 
 import Module_Diagnostics as MD
 import numpy as np
@@ -69,14 +71,18 @@ rcParams["figure.figsize"] = [9.4, 4.8]
 
 run_name = 'RUN_NAME'
 
-loop = LOOP #(LOOP is a boolean)
-time = TIME
+loop = False #LOOP #(LOOP is a boolean)
+time = 218 #TIME
 time = '%05d' % time    # Change the time to string format, needed by functions
 
-filepath = '../ncfiles/'
+### Only for use
+Cluster = 'Occ/'
+run_name = '20_08_09_new_big_one_0/'
+
+filepath = '/data/Lathys/Visualisation/' + Cluster + run_name + 'ncfiles/'
 
 try:
-    date = re.search('w_(.+?)_t', glob.glob(filepath+'Magw*_t'+time+'.nc')[0]).group(1)
+    date = re.search('Magw_(.+?)_t', glob.glob(filepath+'Magw*_t'+time+'.nc')[0]).group(1)
 except (IndexError, AttributeError): 
     sys.exit(f"""time_dump {time} does not appear to have data.
              Let us go to the next time_dump""")
@@ -315,7 +321,7 @@ x = {self.ind}''')
 # When the bow_shock is misplaced, these next few cells should help understand why
 dl = 5
 
-str_coord='Y'
+str_coord='X'
 
 
 if (str_coord=='X'):
@@ -393,8 +399,10 @@ maximums = signal.argrelextrema(j_slice, np.greater, order=1+int(5/np.mean(gstep
 #This is need to discrimitate between
 #the bow shock and the interplanetary shock
 if str_coord=='X':
+    b_slice = savgol_filter(b_slice, 51, 3)
     test_b_grad_up = (np.gradient(b_slice) < -1 )
     test_up = test_up & test_b_grad_up
+
 
 test_down =  (  test_j_large
               & test_close_to_planet
@@ -439,6 +447,8 @@ axe.set_ylim([-1.5,1.5])
 axe.axvline(coord_bow_shock_up   , color='red', label="bow shock up")
 axe.axvline(coord_bow_shock_down , color='red', label="bow shock down")
 axe.set_xlim([min(coord), abs(min(coord))])
+if str_coord == 'X':
+    axe.set_xlim([min(coord), 200])
 axe.get_xaxis().set_visible(False)
 axe.legend()
 
@@ -515,9 +525,9 @@ axe.legend()
 
 
 # When the magnetopause is misplaced, these next few cells should help understand why
-dl = 5
+dl = 2
 
-str_coord='Y'
+str_coord='Z'
 
 
 if (str_coord=='X'):
@@ -591,58 +601,41 @@ n_slice = savgol_filter(n_slice, 51, 3)
 test_planet = (20 < abs(coord)) & (abs(coord) < 80)
 test_coord_up  = (coord > 0)
 test_coord_down  = (coord < 0)
-#test_grad_n_up   = (np.gradient(n_slice) > 0.1*max(np.gradient(n_slice)[test_planet])) & test_coord_up
-#test_grad_n_down = (np.gradient(n_slice) < 0.1*min(np.gradient(n_slice)[test_planet])) & test_coord_down
+test_up   = test_coord_up & test_planet
+test_down = test_coord_down & test_planet
+test_grad_n_up   = (np.gradient(n_slice) > 0.1*max(np.gradient(n_slice))) & test_coord_up
+test_grad_n_down = (np.gradient(n_slice) < -0.1*max(np.gradient(n_slice))) & test_coord_down
 
-test_up   = test_coord_up & test_planet # & test_grad_n_up
-test_down = test_coord_down & test_planet # & test_grad_n_down
-
-# def give_center_of_multiple_ones(test): 
-#     count  = 0 
-#     counts = [] 
-#     for t in test: 
-#         if t: 
-#             count += 1 
-#         else:    
-#             count = 0 
-#         counts.append(count) 
-#         end = counts.index(max(counts)) 
-#         start = end - max(counts) + 1
-#         center = int(start + (end-start)/2) 
-#     return center
-
-def intersection(lst1, lst2): 
-    lst3 = [value for value in lst1 if value in lst2] 
-    return lst3 
-
-jyz_slice = np.sqrt( jy_slice**2 + jz_slice**2 )
-
-maximums = signal.argrelextrema(jyz_slice, np.greater, order=4)
+maximums = signal.argrelextrema(j_slice, np.greater, order=4)
 
 if str_coord=='X':
-    jyz_max_local_max_up = max(intersection(jyz_slice[maximums], jyz_slice[test_up]))
-    i_m_up = MD.aplatir(np.where(jyz_slice == jyz_max_local_max_up))
+    #This next line may be convoluted for nothing
+    #Try: j_max_local_map_up = max(j_slice[test_up])
+    j_max_local_max_up = max(MD.intersection(j_slice[maximums], j_slice[test_up]))
+    i_m_up = MD.aplatir(np.where(j_slice == j_max_local_max_up))
     coord_magnetopause_up = coord[i_m_up]
-
     coord_magnetopause_down = 0
-
 elif (str_coord == 'Y'):
-    jyz_max_local_max_up = MD.second_largest(jyz_slice, intersection(jyz_slice[maximums], jyz_slice[test_up]))
-    i_m_up = MD.aplatir(np.where(jyz_slice == jyz_max_local_max_up))
+    i_m_up = MD.give_center_of_multiple_ones(test_grad_n_up)
     coord_magnetopause_up = coord[i_m_up]
-
-    jyz_max_local_max_down = MD.second_largest(jyz_slice, intersection(jyz_slice[maximums], jyz_slice[test_down]))
-    i_m_down = MD.aplatir(np.where(jyz_slice == jyz_max_local_max_down))
+    i_m_down = MD.give_center_of_multiple_ones(test_grad_n_down)
     coord_magnetopause_down = coord[i_m_down]
-    
+#     j_max_local_max_up = MD.second_largest(j_slice, MD.intersection(j_slice[maximums], j_slice[test_up]))
+#     i_m_up = MD.aplatir(np.where(j_slice == j_max_local_max_up))
+#     coord_magnetopause_up = coord[i_m_up]
+#     j_max_local_max_down = MD.second_largest(j_slice, MD.intersection(j_slice[maximums], j_slice[test_down]))
+#     i_m_down = MD.aplatir(np.where(j_slice == j_max_local_max_down))
+#     coord_magnetopause_down = coord[i_m_down]
 elif (str_coord == 'Z'):
-    jyz_max_local_max_up = max(intersection(jyz_slice[maximums], jyz_slice[test_up]))
-    i_m_up = MD.aplatir(np.where(jyz_slice == jyz_max_local_max_up))
+    j_max_local_max_up = max(MD.intersection(j_slice[maximums], j_slice[test_up]))
+    i_m_up = MD.aplatir(np.where(j_slice == j_max_local_max_up))
     coord_magnetopause_up = coord[i_m_up]
 
-    jyz_max_local_max_down = max(intersection(jyz_slice[maximums], jyz_slice[test_down]))
-    i_m_down = MD.aplatir(np.where(jyz_slice == jyz_max_local_max_down))
+    j_max_local_max_down = max(MD.intersection(j_slice[maximums], j_slice[test_down]))
+    i_m_down = MD.aplatir(np.where(j_slice == j_max_local_max_down))
     coord_magnetopause_down = coord[i_m_down]
+
+
 
 print(coord_magnetopause_up)
 print(coord_magnetopause_down)
@@ -655,14 +648,12 @@ print(coord_magnetopause_down)
 # give_center_of_multiple_ones(test_grad_n_down & test_coord_down & test_planet)
 
 
-# In[18]:
+# In[19]:
 
-
-from matplotlib.gridspec    import GridSpec
 
 plt.close('all')
-plt.figure(figsize=(8, 10))
-gs = GridSpec(4, 1)
+plt.figure(figsize=(15, 5))
+gs = GridSpec(1, 1)
 
 axe = plt.subplot(gs[0])
 axe.set_xlabel(str_coord, weight='bold', fontsize=16)
@@ -670,44 +661,29 @@ axe.axvline(coord_magnetopause_up   , color='red', linewidth=3, alpha=0.5, label
 axe.axvline(coord_magnetopause_down , color='red', linewidth=3, alpha=0.5, label="magnetopause down position")
 axe.plot(coord, n_slice, label='n slice')
 axe.plot(coord, np.gradient(n_slice), label = 'grad n slice')
-axe.plot(coord, test_up, label='test up')
-axe.plot(coord, test_down, label='test down')
+if str_coord == 'Y':
+    axe.plot(coord, 0.1*axe.get_ylim()[1]*test_grad_n_up, label='test_grad_n_up')
+    axe.plot(coord, 0.1*axe.get_ylim()[1]*test_grad_n_down, label='test_grad_n_down')
+else:
+    axe.plot(coord, 0.1*axe.get_ylim()[1]*test_up, label='test_up')
+    axe.plot(coord, 0.1*axe.get_ylim()[1]*test_down, label='test_down')    
 axe.set_xlim([min(coord), abs(min(coord))])
-axe.set_xlim([-100, 100])
+# axe.set_xlim([-100, 100])
 axe.legend()
 
-axe = plt.subplot(gs[1], sharex=axe)
-axe.set_xlabel(str_coord, weight='bold', fontsize=16)
-axe.axvline(coord_magnetopause_up   , color='red', linewidth=3, alpha=0.5, label="magnetopause up position")
-axe.axvline(coord_magnetopause_down , color='red', linewidth=3, alpha=0.5, label="magnetopause down position")
-axe.plot(coord, j_slice, label='j slice')
-axe.scatter(coord[maximums], j_slice[maximums], label='local maximas')
-ymax = 90 #0.1*np.nanmax(j_slice)
-axe.set_ylim([-1, ymax])
-# axe.plot(coord, 1000*np.gradient(n_slice), label = '1000*grad n slice')
-# axe.plot(coord, 0.5*ymax*test_grad_n_up, label='strong up gradient')
-# axe.plot(coord, 0.5*ymax*test_grad_n_down, label='strong down gradient')
-axe.legend()
+# axe = plt.subplot(gs[1], sharex=axe)
+# axe.set_xlabel(str_coord, weight='bold', fontsize=16)
+# axe.axvline(coord_magnetopause_up   , color='red', linewidth=3, alpha=0.5, label="magnetopause up position")
+# axe.axvline(coord_magnetopause_down , color='red', linewidth=3, alpha=0.5, label="magnetopause down position")
+# axe.plot(coord, j_slice, label='j slice')
+# axe.scatter(coord[maximums], j_slice[maximums], label='local maximas')
+# ymax = 90 #0.1*np.nanmax(j_slice)
+# axe.set_ylim([-1, ymax])
+# # axe.plot(coord, 1000*np.gradient(n_slice), label = '1000*grad n slice')
+# # axe.plot(coord, 0.5*ymax*test_grad_n_up, label='strong up gradient')
+# # axe.plot(coord, 0.5*ymax*test_grad_n_down, label='strong down gradient')
+# axe.legend()
 
-axe = plt.subplot(gs[2], sharex=axe)
-axe.set_xlabel(str_coord, weight='bold', fontsize=16)
-axe.axvline(coord_magnetopause_up   , color='red', linewidth=3, alpha=0.5, label="magnetopause up position")
-axe.axvline(coord_magnetopause_down , color='red', linewidth=3, alpha=0.5, label="magnetopause down position")
-axe.plot(coord, jz_slice, label='jz slice')
-axe.scatter(coord[maximums], jz_slice[maximums], label='local maximas')
-ymax = 50 #0.8*np.nanmax(jz_slice)
-axe.set_ylim([-1, ymax])
-axe.legend()
-
-axe = plt.subplot(gs[3], sharex=axe)
-axe.set_xlabel(str_coord, weight='bold', fontsize=16)
-axe.axvline(coord_magnetopause_up   , color='red', linewidth=3, alpha=0.5, label="magnetopause up position")
-axe.axvline(coord_magnetopause_down , color='red', linewidth=3, alpha=0.5, label="magnetopause down position")
-axe.plot(coord, jyz_slice, label=r'$\sqrt{j_y^2+j_z^2}$')
-axe.scatter(coord[maximums], jyz_slice[maximums], label='local maximas')
-ymax = 70 #0.8*np.nanmax(jz_slice)
-axe.set_ylim([-1, ymax])
-axe.legend()
 
 if not(loop):
     plt.show()
@@ -715,7 +691,7 @@ if not(loop):
 
 # ##### IP shock
 
-# In[19]:
+# In[24]:
 
 
 coord = x
@@ -730,21 +706,21 @@ v_slice = np.sqrt( Vx[slices]**2
 n_slice = N[slices].mean(axis=(1, 2))
 
 
-# In[20]:
+# In[25]:
 
 
 grad_n = np.gradient(n_slice)
 grad_v = np.gradient(v_slice)
 
 
-# In[21]:
+# In[26]:
 
 
 ix_ip_shock = np.where(grad_v == np.nanmax(grad_v))
 x_ip_shock = coord[ix_ip_shock]
 
 
-# In[22]:
+# In[27]:
 
 
 plt.close('all')
@@ -773,7 +749,7 @@ if not(loop):
 
 # ##### MC leading edge
 
-# In[23]:
+# In[28]:
 
 
 coord = x
@@ -807,7 +783,7 @@ grad_n = np.gradient(n_slice)
 grad_b = np.gradient(b_slice)
 
 
-# In[24]:
+# In[29]:
 
 
 test_grad_n = grad_n < -1*np.nanmean(abs(grad_n))
@@ -816,15 +792,16 @@ test_non_absurd = (abs(coord) < 800) & (abs(coord - x_ip_shock) > 45)
 test_le = test_grad_n & test_grad_b & test_non_absurd #& test_grad_v
 
 
-# In[25]:
+# In[30]:
 
-try:
-    ix_mc_leading_edge = np.where(j_slice == np.nanmax(j_slice[np.where(test_le)]))
-    x_mc_leading_edge = x[ix_mc_leading_edge]
-except ValueError:
-    x_mc_leading_edge = np.nan
 
-# In[26]:
+ix_mc_leading_edge = np.where(j_slice == np.nanmax(j_slice[np.where(test_le)]))
+
+x_mc_leading_edge = x[ix_mc_leading_edge]
+
+
+# In[31]:
+
 
 plt.close('all')
 plt.figure(figsize=(8, 10))
@@ -905,7 +882,7 @@ if not(loop):
 
 # ### Compute global geometry & shock normals
 
-# In[27]:
+# In[32]:
 
 
 # Locate bow shock and magnetopause    
@@ -917,34 +894,34 @@ print(x_bow_shock, x_magnetopause, y_bow_shock_up, y_bow_shock_down, y_magnetopa
 boxes = MD.create_boxes_dictionary()
 
 
-# In[28]:
+# In[33]:
 
 
-#This is ill-defined. The local "upstream" of each box should be defined by following velocity stream lines
+# #This is ill-defined. The local "upstream" of each box should be defined by following velocity stream lines
 
-normales = {}
+# normales = {}
 
-for box in boxes:
-    loc = boxes[box]['center']
-    origin, vector = MD.bow_shock_normale(loc, B, N, V)
-    print(f"normale for {box} box is {vector} at origin {origin}")
-    normales.update({  f'{box}': {'origin': origin,
-                                  'vector': vector}  })
-
-
-# In[29]:
+# for box in boxes:
+#     loc = boxes[box]['center']
+#     origin, vector = MD.bow_shock_normale(loc, B, N, V)
+#     print(f"normale for {box} box is {vector} at origin {origin}")
+#     normales.update({  f'{box}': {'origin': origin,
+#                                   'vector': vector}  })
 
 
-for box in boxes:
-    loc = boxes[box]['center']
-    dict_params = MD.calculate_bow_shock_parameters(loc, B, N, V, T)
-    print(MD.color.BOLD + f"shock params for {box}:" + MD.color.END)        
-    for param in dict_params:
-          print(f'{param}: {dict_params[param]:0.2g}')
+# In[34]:
+
+
+# for box in boxes:
+#     loc = boxes[box]['center']
+#     dict_params = MD.calculate_bow_shock_parameters(loc, B, N, V, T)
+#     print(MD.color.BOLD + f"shock params for {box}:" + MD.color.END)        
+#     for param in dict_params:
+#           print(f'{param}: {dict_params[param]:0.2g}')
           
 
 
-# In[30]:
+# In[35]:
 
 
 # normales_xy = {}
@@ -968,7 +945,7 @@ for box in boxes:
 
 # ### Actual plots
 
-# In[31]:
+# In[36]:
 
 
 xmin = min(x)
@@ -979,55 +956,129 @@ zoom = (xmin, xmax, min(y), max(y), min(z), max(z))
 # lw = 2*np.sqrt(Bx.transpose()**2 + Bj.transpose()**2) / np.mean(A)
 
 
-# In[32]:
+# #### Magnetic field
+
+# In[37]:
 
 
 mag_B = np.sqrt( Bx[:,:,nz0]**2
                 +By[:,:,nz0]**2
                 +Bz[:,:,nz0]**2 )
 
-magplot = MD.plot_colormap(mag_B, title = f'B dans (x,y) at {time}', label = 'B (nT)', plane = 'xy',
+magplot = MD.plot_colormap(mag_B, title = f'B in plane (x,y) at {time}', label = 'B (nT)', plane = 'xy',
                  ratio_max_to_med = 1.4, with_dots = True, normales = None, loop = loop,
                  save_dir = storing_directory, t_label = time_label,
                  zoom = zoom, density = 1.5, 
                  streamplot = True, Bx = Bx[:,:,nz0], Bj = By[:,:,nz0])
 
 
-# In[33]:
-
-
-MD.plot_colormap(N[:,:,nz0], f'N dans (x,y) at {time}', r'N (cm$^{-3}$)', 'xy',
-                 with_dots = True, normales = None, loop = loop,
-                 save_dir = storing_directory, t_label = time_label,
-                 zoom = zoom)
-
-
-# In[34]:
+# In[39]:
 
 
 mag_B = np.sqrt( Bx[:,ny0,:]**2
                 +By[:,ny0,:]**2
                 +Bz[:,ny0,:]**2 )
 
-MD.plot_colormap(mag_B, f'B dans (x,z) at {time}', 'B (nT)', 'xz',
+MD.plot_colormap(mag_B, f'B in plane (x,z) at {time}', 'B (nT)', 'xz',
                  ratio_max_to_med = 1.4, with_dots = True, normales = None, loop = loop,
                  save_dir = storing_directory, t_label = time_label,
                  zoom = zoom, density = 1.5,
                  streamplot = True, Bx = Bx[:,ny0,:], Bj = Bz[:,ny0,:])
 
 
-# In[35]:
+# #### Plasma density
+
+# In[38]:
 
 
-MD.plot_colormap(N[:,ny0,:], f'N dans (x,z) at {time}', r'N (cm$^{-3}$)', 'xz',
+MD.plot_colormap(N[:,:,nz0], f'N in plane (x,y) at {time}', r'N (cm$^{-3}$)', 'xy',
                  with_dots = True, normales = None, loop = loop,
                  save_dir = storing_directory, t_label = time_label,
                  zoom = zoom)
 
 
+# In[40]:
+
+
+MD.plot_colormap(N[:,ny0,:], f'N in plane (x,z) at {time}', r'N (cm$^{-3}$)', 'xz',
+                 with_dots = True, normales = None, loop = loop,
+                 save_dir = storing_directory, t_label = time_label,
+                 zoom = zoom)
+
+
+# #### Current
+
+# In[41]:
+
+
+slice_x = slice(None)
+slice_y = slice(None)
+slice_z = slice(nz0-1, nz0+1)
+slices = (slice_x, slice_y, slice_z)
+
+mag_J = np.sqrt(MD.Jx(B, slices)[:,:,1]**2 + MD.Jy(B, slices)[:,:,1]**2 + MD.Jz(B, slices)[:,:,1]**2)
+
+MD.plot_colormap(mag_J, f'J in plane (x,y) at {time}', 'J (nA/m²)', 'xy', ratio_max_to_med = 80,
+                 with_dots = True, normales = None, loop = loop,
+                 save_dir = storing_directory, t_label = time_label,
+                 zoom = zoom)
+
+
+# In[42]:
+
+
+slice_x = slice(None)
+slice_y = slice(ny0-1, ny0+1)
+slice_z = slice(None)
+slices = (slice_x, slice_y, slice_z)
+
+mag_J = np.sqrt(MD.Jx(B, slices)[:,1,:]**2 + MD.Jy(B, slices)[:,1,:]**2 + MD.Jz(B, slices)[:,1,:]**2)
+
+MD.plot_colormap(mag_J, f'J in plane (x,z) at {time}', 'J (nA/m²)', 'xz', ratio_max_to_med = 80,
+                 with_dots = True, normales = None, loop = loop,
+                 save_dir = storing_directory, t_label = time_label,
+                 zoom = zoom)
+
+
+# #### Velocity
+
+# Note, ideally, the last flow line should be a good definition of the magnetopause. Unfortunately, many 'nan' in the velocity make it impractical.
+
+# In[45]:
+
+
+mag_V = np.sqrt( Vx[:,:,nz0]**2
+                +Vy[:,:,nz0]**2
+                +Vz[:,:,nz0]**2 )
+
+np.nan_to_num(mag_V, 0)
+
+magplot = MD.plot_colormap(mag_V, title = f'V in plane (x,y) at {time}', label = 'V (km/s)', plane = 'xy',
+                 ratio_max_to_med = 1.4, with_dots = True, normales = None, loop = loop,
+                 save_dir = storing_directory, t_label = time_label,
+                 zoom = zoom, density = 5.5, 
+                 streamplot = True, Bx = Vx[:,:,nz0], Bj = Vy[:,:,nz0])
+
+
+# In[44]:
+
+
+mag_V = np.sqrt( Vx[:,ny0,:]**2
+                +Vy[:,ny0,:]**2
+                +Vz[:,ny0,:]**2 )
+
+np.nan_to_num(mag_V, 0)
+
+magplot = MD.plot_colormap(mag_V, title = f'V in plane (x,z) at {time}', label = 'V (km/s)', plane = 'xz',
+                 ratio_max_to_med = 1.4, with_dots = True, normales = None, loop = loop,
+                 save_dir = storing_directory, t_label = time_label,
+                 zoom = zoom, density = 5.5, 
+                 streamplot = True, Bx = Vx[:,ny0,:], Bj = Vz[:,ny0,:])
+
+
 # ### Boxes
 
-# In[36]:
+# In[ ]:
 
 
 # %matplotlib notebook
@@ -1036,7 +1087,7 @@ if not(loop):
     MD.plot_boxes()
 
 
-# In[37]:
+# In[ ]:
 
 
 ixmax = MD.aplatir(np.where(x>=xmax))[0]
@@ -1054,7 +1105,7 @@ for box in boxes:
     N_and_boxes[slices] = 0 #Put the density to zero in the boxes, so that they are easy to spot on a plot
 
 
-# In[38]:
+# In[ ]:
 
 
 for box in boxes:   
@@ -1073,7 +1124,7 @@ for box in boxes:
     N_and_boxes[slice_upstream] = np.max(N) #Put the density to max(N) in the boxes, so that they are easy to spot on a plot
 
 
-# In[39]:
+# In[ ]:
 
 
 if not(loop):
@@ -1092,7 +1143,7 @@ if not(loop):
 
 # ### Positions of the IP shock and MC leading edge
 
-# In[40]:
+# In[ ]:
 
 
 x_ip_shock = MD.find_ip_shock(V, metadata, time)
@@ -1101,7 +1152,7 @@ x_mc_leading_edge = MD.find_mc_leading_edge(B, N, metadata, time)
 
 # ### Size of the magnetosheath
 
-# In[41]:
+# In[ ]:
 
 
 size_nose  = abs(  x_bow_shock      - x_magnetopause       )
@@ -1113,7 +1164,7 @@ size_zdown = abs(  z_bow_shock_down - z_magnetopause_down  )
 
 # ### Data in cubes
 
-# In[42]:
+# In[ ]:
 
 
 B_upstream, B_nose, B_yup, B_ydown, B_zup, B_zdown = MD.compute_data_in_cubes(B)
@@ -1162,13 +1213,13 @@ JxB_upstream, JxB_nose, JxB_yup, JxB_ydown, JxB_zup, JxB_zdown = MD.compute_data
 print(JxB_upstream, JxB_nose, JxB_yup, JxB_ydown, JxB_zup, JxB_zdown)
 
 
-# In[43]:
+# In[ ]:
 
 
 boxes
 
 
-# In[44]:
+# In[ ]:
 
 
 #conversion to SI:
@@ -1189,7 +1240,7 @@ Pth_upstream, Pth_nose, Pth_yup, Pth_ydown, Pth_zup, Pth_zdown = MD.compute_data
 print(Pth_upstream, Pth_nose,Pth_yup,Pth_ydown,Pth_zup,Pth_zdown)
 
 
-# In[45]:
+# In[ ]:
 
 
 Beta_upstream, Beta_nose, Beta_yup, Beta_ydown, Beta_zup, Beta_zdown = MD.compute_data_in_cubes(MD.kB*(n*N)*(t*T)*(2*MD.µ0/(b*MD.norm(B))**2))
@@ -1198,7 +1249,7 @@ print(Beta_upstream, Beta_nose,Beta_yup,Beta_ydown,Beta_zup,Beta_zdown)
 
 # ### RMS in cubes
 
-# In[46]:
+# In[ ]:
 
 
 print("rmsB's")
@@ -1235,7 +1286,7 @@ print(rmsBoB_upstream, rmsBoB_nose,rmsBoB_yup,rmsBoB_ydown,rmsBoB_zup,rmsBoB_zdo
 
 # #### test rms plot
 
-# In[47]:
+# In[ ]:
 
 
 if not(loop):
@@ -1252,26 +1303,26 @@ if not(loop):
 
 # ## Store relevant data for the current time dump
 
-# In[48]:
+# In[ ]:
 
 
 boxes = MD.create_boxes_dictionary()
 boxes = MD.make_boxes_JSON_serializable(boxes)
 
 
-# In[49]:
+# In[ ]:
 
 
 x_ip_shock.item()
 
 
-# In[50]:
+# In[ ]:
 
 
 x_mc_leading_edge.item()
 
 
-# In[51]:
+# In[ ]:
 
 
 #     .json files are not happy with numbers with a type = np.float32
@@ -1460,7 +1511,7 @@ relevant_data = { "x_ip_shock"        : x_ip_shock.item()        ,
                 }
 
 
-# In[52]:
+# In[ ]:
 
 
 storing_directory_json = filepath + "../json_files/"
@@ -1499,7 +1550,7 @@ with open(path_json, "w", encoding='utf-8') as updated_story:
     json.dump(stored_data, updated_story)    
 
 
-# In[53]:
+# In[ ]:
 
 
 with open(path_json, "r", encoding='utf-8') as story:
@@ -1508,13 +1559,13 @@ with open(path_json, "r", encoding='utf-8') as story:
 
 # ## Some small tests
 
-# In[54]:
+# In[ ]:
 
 
 # data[f"t{time}"]
 
 
-# In[55]:
+# In[ ]:
 
 
 pdyn_upstream = data[f"t{time}"]['Pdyn_upstream']
@@ -1526,7 +1577,7 @@ pmag_nose = data[f"t{time}"]['Pmag_nose']
 pth_nose  = data[f"t{time}"]['Pth_nose']
 
 
-# In[56]:
+# In[ ]:
 
 
 print(f"pressure in upstream solar wind  = {pdyn_upstream + pmag_upstream + pth_upstream : 0.2f} nPa, with pdyn = {pdyn_upstream:0.2f}, pth = {pth_upstream:0.2f}, pmag = {pmag_upstream:0.2f}"
@@ -1534,19 +1585,19 @@ print(f"pressure in upstream solar wind  = {pdyn_upstream + pmag_upstream + pth_
       f"pressure in magnetosheath nose   = {pdyn_nose + pmag_nose + pth_nose : 0.2f} nPa, with pdyn = {pdyn_nose:0.2f}, pth = {pth_nose:0.2f}, pmag = {pmag_nose:0.2f}")
 
 
-# In[57]:
+# In[ ]:
 
 
 print(rmsB_upstream, rmsB_nose,rmsB_yup,rmsB_ydown,rmsB_zup,rmsB_zdown)
 
 
-# In[58]:
+# In[ ]:
 
 
 print(MD.edge, MD.size_cubes)
 
 
-# In[59]:
+# In[ ]:
 
 
 size_cubes = abs(x_bow_shock-x_magnetopause) - 2*MD.edge #TODO: try other values
@@ -1557,7 +1608,7 @@ x_max = x_magnetopause + magnetosheath_half_width + size_cubes/2
 x_min = x_magnetopause + magnetosheath_half_width - size_cubes/2
 
 
-# In[60]:
+# In[ ]:
 
 
 print(size_cubes)
@@ -1568,13 +1619,13 @@ print(x_min)
 x_max-x_min
 
 
-# In[61]:
+# In[ ]:
 
 
 x_bow_shock
 
 
-# In[62]:
+# In[ ]:
 
 
 print(loc)
