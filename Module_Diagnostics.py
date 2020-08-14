@@ -555,7 +555,7 @@ def find_bow_shock_and_magnetopause(str_coord, B, N, V, loc=None):
         The magnetopause is defined as the local max of Jz in these density gradients.
         '''
 
-        test_planet = (15 < abs(coord)) & (abs(coord) < 80)
+        test_planet = (20 < abs(coord)) & (abs(coord) < 80)
         test_coord_up  = (coord > 0)
         test_coord_down  = (coord < 0)
         #test_grad_n_up   = (np.gradient(n_slice) > 0.1*max(np.gradient(n_slice)[test_planet])) & test_coord_up
