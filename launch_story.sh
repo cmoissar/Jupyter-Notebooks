@@ -1,7 +1,7 @@
 #!/bin/bash
 
 INPUT=$(pwd)
-JOBNAME=$(echo $INPUT| cut -d'/' -f 6)$
+JOBNAME=$(echo $INPUT| cut -d'/' -f 6)
 
 var=s/JOBNAME/$JOBNAME/g
 
