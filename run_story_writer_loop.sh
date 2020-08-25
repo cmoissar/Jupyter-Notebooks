@@ -1,7 +1,7 @@
 module unload python/3.5.3
 module unload intel/17.0
 module load intel/17.2
-module load intelpython3/2019.1
+module load python/3.6.3
 
 a=300
 Dt_diag=10
@@ -24,7 +24,7 @@ for TIME in $(seq 150 $Dt_diag $a)
   rm -f story_writer_loop.py
  done
 
-module unload intelpython3/2019.1
+module unload python/3.6.3
 module unload intel/17.2
 module load intel/17.0
 module load python/3.5.3
