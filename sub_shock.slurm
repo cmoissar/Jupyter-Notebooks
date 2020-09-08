@@ -14,4 +14,6 @@
 
 cd ${SCRATCHDIR}/JOBNAME/story/
 
-source ./run_story_writer_loop.sh
+jupyter nbconvert --to python Shock_tracking_save_slices.ipynb
+
+ipython Shock_tracking_save_slices.py 
