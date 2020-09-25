@@ -4,7 +4,7 @@ module load intel/17.2
 module load python/3.6.3
 
 a=300
-Dt_diag=10
+Dt_diag=1
 
 INPUT=$(pwd)
 JOBNAME=$(echo $INPUT| cut -d'/' -f 6)
